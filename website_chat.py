@@ -13,10 +13,8 @@ from langchain.memory import ConversationBufferMemory
 from langchain.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 import os
+
 # Set the OpenAI API key
-
-os.environ["OPENAI_API_KEY"] = st.secrets["openai_api_key"]
-
 # ============= Configuration Component =============
 def initialize_session_state():
     """Initialize session state variables if they don't exist."""
@@ -26,6 +24,16 @@ def initialize_session_state():
         st.session_state.chat_history = []
     if "crawled_urls" not in st.session_state:
         st.session_state.crawled_urls = set()
+    if "openai_api_key" not in st.session_state:
+        st.session_state.openai_api_key = ""
+    
+    # Set the OpenAI API key - user key takes precedence over secrets
+    api_key = st.session_state.openai_api_key
+    if not api_key and "openai_api_key" in st.secrets:
+        api_key = st.secrets["openai_api_key"]
+    
+    if api_key:
+        os.environ["OPENAI_API_KEY"] = api_key
 
 
 def setup_page_config():
@@ -38,6 +46,24 @@ def create_sidebar_config():
     """Create and return the configuration from the sidebar."""
     with st.sidebar:
         st.header("Configuration")
+                # OpenAI API Key input
+        api_key = st.text_input("OpenAI API Key (optional)", 
+                               value=st.session_state.openai_api_key, 
+                               type="password",
+                               help="Enter your own OpenAI API key. If not provided, the app will use the default key if available.")
+        
+        # Update session state if the key changed
+        if api_key != st.session_state.openai_api_key:
+            st.session_state.openai_api_key = api_key
+            if api_key:
+                os.environ["OPENAI_API_KEY"] = api_key
+                st.success("API key updated!")
+            elif "openai_api_key" in st.secrets:
+                os.environ["OPENAI_API_KEY"] = st.secrets["openai_api_key"]
+                st.info("Using default API key")
+            else:
+                st.warning("No API key provided")
+        
         config = {
             "ollama_model": st.selectbox(
                 "Select Ollama Model",
