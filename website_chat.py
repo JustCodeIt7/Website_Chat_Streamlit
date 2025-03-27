@@ -11,6 +11,11 @@ from langchain_ollama import OllamaEmbeddings, ChatOllama
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts import PromptTemplate
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+import os
+# Set the OpenAI API key
+
+os.environ["OPENAI_API_KEY"] = st.secrets["openai_api_key"]
 
 # ============= Configuration Component =============
 def initialize_session_state():
@@ -270,7 +275,8 @@ def setup_vector_approach(text, config):
     chunks = text_splitter.split_text(text)
 
     # Create embeddings and vector store
-    embeddings = OllamaEmbeddings(model=config["embedding_model"])
+    # embeddings = OllamaEmbeddings(model=config["embedding_model"])
+    embeddings = OpenAIEmbeddings(model='text-embedding-3-small') 
     vectorstore = FAISS.from_texts(chunks, embeddings)
 
     # Create a retriever
@@ -280,7 +286,8 @@ def setup_vector_approach(text, config):
     memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
     # Create the conversational chain
-    llm = ChatOllama(model=config["ollama_model"],temperature=0.3)
+    # llm = ChatOllama(model=config["ollama_model"],temperature=0.3)
+    llm = ChatOpenAI(model='gpt-4o-mini',temperature=0.3)
     qa_chain = ConversationalRetrievalChain.from_llm(
         llm=llm, retriever=retriever, memory=memory
     )
@@ -319,7 +326,7 @@ def process_website(url, config):
     st.success(f"Website crawl complete! Processed {num_pages} pages")
 
     # Initialize the LLM
-    llm = ChatOllama(model=config["ollama_model"])
+    llm = ChatOpenAI(model='gpt-4o-mini',temperature=0.3)
 
     # If text is smaller than threshold, use full context approach
     if text_length < config["text_threshold"]:

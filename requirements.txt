@@ -2,6 +2,7 @@ streamlit
 pandas
 langchain
 langchain-ollama
+langchain-openai
 langchain-community
 requests
 beautifulsoup4
